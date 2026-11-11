@@ -1,0 +1,8 @@
+.neon
+node_modules/
+
+# Neon env files written by `neon deploy` / `neon env pull` — never commit secrets
+.env
+.env.local
+.env.*.local
+!.env.example
