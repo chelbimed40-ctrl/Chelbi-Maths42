@@ -1,5 +1,9 @@
-import "dotenv/config";
+import { config as loadEnv } from "dotenv";
 import { defineConfig } from "drizzle-kit";
+
+// Same precedence as the app: `.env.local` (written by `neon deploy`) wins over `.env`.
+// Already-exported process env always wins over both.
+loadEnv({ path: [".env.local", ".env"], quiet: true });
 
 /**
  * Credentials come from the environment only — nothing is hardcoded here.
