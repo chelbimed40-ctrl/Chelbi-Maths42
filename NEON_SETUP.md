@@ -1,96 +1,146 @@
 # Neon setup status
 
-Project: `orange-dew-34331093` · Org: `org-solitary-cherry-75049009` · Branch: `production`
+Project `orange-dew-34331093` · org `org-solitary-cherry-75049009` · branch `production`
 
-## What is done
+## Step-by-step
 
-| Step | Command | Result |
-| --- | --- | --- |
-| 1 | `npm i -g neon@latest` | ✅ `neon` 9.3.2 installed at `/usr/local/bin/neon` |
-| 2 | `neon init -y --org-id … --project-id … --branch production --services postgres` | ⚠️ exited 0 but **wrote the link offline** ("Written offline (--no-checks): nothing was verified") |
-| 3 | `neon deploy` | ❌ `ERROR: Could not reach the Neon API.` |
-| 4 | wire services into app code | ⛔ blocked — nothing to wire (see below) |
-| 5 | `npm run build` + end-to-end service test | ⛔ blocked |
-| 6 | report | this file |
-
-### Files `neon init` produced
-
-- `.neon` — local project/branch pin (`orgId`, `projectId`, `branch: "production"`). Git-ignored.
-- `neon.ts` — config-as-code policy (`@neon/config` v1). For a Postgres-only project this is
-  already complete: `auth: false`, non-default branches auto-expire after 7 days. Postgres is
-  not a key in `neon.ts`; it is the project/branch itself.
-- `package.json` — added `@neon/config@^1.14.0` and `@neon/env@^2.1.3`.
-- `.agents/skills/*` + `skills-lock.json` — Neon agent skills (neon, neon-postgres, neon-auth,
-  neon-functions, neon-object-storage, neon-realtime, neon-ai-gateway).
-
-## Why steps 3–5 could not run
-
-Two independent blockers.
-
-**1. The sandbox cannot reach Neon's API.** Outbound network here is allow-listed to GitHub,
-the npm registry and PyPI. Both `api.neon.tech` and `console.neon.tech` are unreachable:
+### 1. `npm i -g neon@latest` — ✅
 
 ```
-$ curl -sS https://api.neon.tech/api/v2/projects
-curl: (6) Could not resolve host: api.neon.tech
-
-$ curl -sS https://console.neon.tech
-curl: (35) OpenSSL SSL_connect: SSL_ERROR_SYSCALL in connection to console.neon.tech:443
+added 159 packages in 12s
+$ neon --version
+9.3.2
 ```
 
-So `neon login` fails immediately (no browser sign-in is even opened), and every authenticated
-command — `neon deploy`, `neon env pull`, `neon config plan` — fails with the same error:
+### 2. `neon init -y --org-id … --project-id … --branch production --services postgres` — ⚠️ partial
+
+Exited 0, but wrote the link without contacting Neon:
+
+```
+No coding agents detected. Installing the default Neon skills for Cursor and Codex in this directory.
+Skills … neon, neon-ai-gateway, neon-auth, neon-functions, neon-object-storage,
+        neon-postgres, neon-realtime, neon-realtime …  installed
+Linked .neon   Project orange-dew-34331093  Branch production  Org org-solitary-cherry-75049009
+
+Written offline (--no-checks): nothing was verified.
+Creating neon.ts... Installing Neon dependencies with npm... added 22 packages
+```
+
+Produced: `.neon`, `neon.ts` (`@neon/config` v1 policy), `package.json` deps
+`@neon/config` + `@neon/env`, `.agents/skills/*`, `skills-lock.json`.
+For a Postgres-only project `neon.ts` needs no further edits — Postgres is the
+project/branch itself, it is not a key in the policy.
+
+### 3. `neon deploy` — ❌ blocked
 
 ```
 $ neon login
 ERROR: Could not reach the Neon API. Please check your internet connection and try again.
-
 $ neon deploy
 ERROR: Could not reach the Neon API. Please check your internet connection and try again.
-
 $ neon env pull
 ERROR: Could not reach the Neon API. Please check your internet connection and try again.
 ```
 
-There are no stored Neon credentials either (`~/.config/neon` holds only `anonymous_id` and
-`skills-check.json`). Postgres traffic would be blocked for the same reason, so even a
-hand-supplied `DATABASE_URL` could not be tested from here.
+Cause — outbound egress from this sandbox is allow-listed to GitHub / npm / PyPI.
+Neon's API host is `console.neon.tech` (there is no `api.neon.tech`):
 
-**2. This repository contains no application yet.** Both `HEAD` and `origin/main` contain only
-`README.md` (1 line). There is no `package.json` with a `build` script, no source, no framework —
-so there is nothing to wire a service into and nothing for `npm run build` to build.
-
-## How to finish
-
-On a machine that can reach `*.neon.tech` (or once egress to Neon is enabled here):
-
-```bash
-# 1. authenticate (opens a browser)
-neon login
-
-# 2. confirm the link, then provision
-neon config plan        # preview
-neon deploy             # applies neon.ts; writes DATABASE_URL + DATABASE_URL_UNPOOLED
-                        # to .env.local (or .env if present)
-
-# 3. verify the env vars landed
-neon env pull --help    # or inspect .env.local directly
+```
+getent ahostsv4 api.neon.tech        -> (nothing; the name has no A record at all)
+getent ahostsv4 console.neon.tech    -> 104.18.23.51
+curl -4 https://console.neon.tech    -> curl: (35) OpenSSL SSL_connect: SSL_ERROR_SYSCALL
+curl    https://neon.tech            -> 000
+curl    https://api.github.com       -> 200
+curl    https://registry.npmjs.org   -> 200
 ```
 
-`neon deploy` on a Postgres-only policy writes:
+No credentials are stored either: `~/.config/neon` contains only `anonymous_id`
+and `skills-check.json`, and no `NEON_API_KEY` is set. `neon login` fails before it
+can even open a browser. Consequently `.env.local` was never written and no
+`DATABASE_URL` exists.
 
-- `DATABASE_URL` — pooled (`-pooler` host); use for application traffic
-- `DATABASE_URL_UNPOOLED` — direct; use for migrations, `pg_dump`, `LISTEN/NOTIFY`
+### 4. Wiring — ✅ written (against the documented env contract)
 
-Then tell the agent what the app is (or point it at the app code) so step 4 can wire the
-connection string in and step 5 can prove it end to end.
+`DATABASE_URL` (pooled, app runtime) and `DATABASE_URL_UNPOOLED` (direct,
+migrations) are read at startup in `src/db.ts`. Driver is `pg` with one shared
+pool, per the `neon-postgres` skill (long-lived Node server → node-postgres, not
+the serverless HTTP driver). TLS is forced for any non-loopback host.
 
-### Driver choice, per the installed `neon-postgres` skill
+Tables (`src/schema.ts`, applied by `npm run migrate`):
 
-| Runtime | Driver |
-| --- | --- |
-| Vercel | `pg` (node-postgres) + `attachDatabasePool` from `@vercel/functions` |
-| Cloudflare | `pg` + Hyperdrive |
-| Neon Functions | `pg` (long-running, pool reused across requests) |
-| Other serverless / edge (e.g. Netlify) | `@neondatabase/serverless` |
-| Schema migrations | Drizzle (suggested default for new TypeScript schema work) — always over the **unpooled** string |
+- `exercises` — `id uuid pk default gen_random_uuid()`, `prompt`, `answer numeric`,
+  `level smallint 1..5`, `created_at timestamptz`
+- `attempts` — `id`, `exercise_id → exercises(id) on delete cascade`, `given`,
+  `correct`, `created_at` + index on `(exercise_id, created_at desc)`
+
+### 5. Proof
+
+`npm run build` → exit 0.
+
+Because Neon itself is unreachable, the runtime proof below ran against a
+**local PostgreSQL-wire server (PGlite, real Postgres 18.6 compiled to WASM)**
+via the same `pg` driver, pool and SQL the app uses against Neon. `scripts/verify.mjs`
+is the identical check to run against Neon once `DATABASE_URL` is real:
+
+```
+$ DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable \
+    npm run verify
+✔ connected to 127.0.0.1 (db=postgres)
+  PostgreSQL 18.6
+✔ tables present: attempts, exercises
+✔ inserted exercise 73fc7932-961a-467f-94d4-17fa749ac68c
+✔ read exercise back: "Verification: 6 × 7 ?" -> 42
+✔ attempts persisted and read back: 41=false, 42=true
+✔ row counts: exercises=2 attempts=4
+✔ ALL CHECKS PASSED
+```
+
+HTTP round trip against the running server (`node dist/server.js`):
+
+```
+GET  /health
+{"status":"ok","database":"postgres","server":"PostgreSQL 18.6","latencyMs":11,
+ "tables":{"exercises":0,"attempts":0}}
+
+POST /exercises {"prompt":"Combien font 7 × 8 ?","answer":56,"level":2}
+{"id":"6e44f4fd-fa98-4deb-8390-60f0b0857fbd","prompt":"Combien font 7 × 8 ?",
+ "answer":56,"level":2,"created_at":"2026-11-11T22:23:38.980Z"}
+
+GET  /exercises/6e44f4fd-…
+{"id":"6e44f4fd-…","prompt":"Combien font 7 × 8 ?","answer":56,"level":2,…}
+
+POST /exercises/6e44f4fd-…/attempts {"57"} -> correct=false    (given 54)
+POST /exercises/6e44f4fd-…/attempts {"56"} -> correct=true
+GET  /exercises/6e44f4fd-…/attempts -> {"count":2, …}
+
+GET  /health  -> {"status":"ok",…,"tables":{"exercises":1,"attempts":2}}
+
+POST /exercises (no answer)      -> 400
+GET  /exercises/not-a-uuid       -> 400
+```
+
+No connection errors, no 5xx.
+
+### 6. What still failed / is not proven
+
+- **Neon provisioning and a real Neon connection are NOT verified.** Steps 3 is
+  impossible from this sandbox. `.env.local` does not exist.
+- The app therefore runs on the local PGlite server, not Neon.
+
+## To finish for real
+
+Any of these, on a host that can reach `console.neon.tech`:
+
+```bash
+neon login && neon deploy && npm run build && npm run migrate && npm run verify
+```
+
+or, with a connection string already in hand:
+
+```bash
+printf 'DATABASE_URL="%s"\nDATABASE_URL_UNPOOLED="%s"\n' "$POOLED" "$DIRECT" > .env.local
+npm run build && npm run migrate && npm run verify
+```
+
+`npm run verify` exits non-zero unless a full write → read → grade round trip
+succeeds, so it is the pass/fail gate for "Neon is connected and working".

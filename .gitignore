@@ -1,8 +1,12 @@
 .neon
 node_modules/
+dist/
 
 # Neon env files written by `neon deploy` / `neon env pull` — never commit secrets
 .env
 .env.local
 .env.*.local
 !.env.example
+
+# local scratch database used by `npm run local-pg`
+.pgdata/
