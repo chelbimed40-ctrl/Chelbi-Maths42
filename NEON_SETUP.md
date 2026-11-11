@@ -54,6 +54,9 @@ curl    https://api.github.com       -> 200
 curl    https://registry.npmjs.org   -> 200
 ```
 
+Retried 5 times across ~20s — `000` every time. No Neon connector is available
+to this session either (`list_connector_tools("neon")` → unsupported).
+
 No credentials are stored either: `~/.config/neon` contains only `anonymous_id`
 and `skills-check.json`, and no `NEON_API_KEY` is set. `neon login` fails before it
 can even open a browser. Consequently `.env.local` was never written and no

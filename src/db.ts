@@ -41,6 +41,12 @@ export function createPool(url: string = appConnectionString()): pg.Pool {
     connectionString: url,
     max: Number(process.env.PGPOOL_MAX ?? 5),
     ssl: isLocal(url) ? false : { rejectUnauthorized: true },
+    // Neon scales compute to zero; a suspended endpoint can take a few seconds
+    // to wake, so allow a generous connect timeout instead of failing instantly.
+    connectionTimeoutMillis: Number(process.env.PGCONNECT_TIMEOUT_MS ?? 15_000),
+    // Keep pooled connections short-lived so the Neon pooler is not starved.
+    idleTimeoutMillis: Number(process.env.PGIDLE_TIMEOUT_MS ?? 30_000),
+    keepAlive: true,
   });
   pool.on("error", (err) => {
     console.error("[db] idle client error:", err.message);
