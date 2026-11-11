@@ -1,0 +1,243 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #0d0c09;
+  --color-ink-2: #1a1710;
+
+  /* Brand re-skin: map the indigo scale onto a gold palette so the whole
+     interface adopts the black-and-gold identity consistently. */
+  --color-indigo-50: #fbf7ea;
+  --color-indigo-100: #f6ecc9;
+  --color-indigo-200: #eedda0;
+  --color-indigo-300: #e5c96e;
+  --color-indigo-400: #ddb54b;
+  --color-indigo-500: #d4ac37;
+  --color-indigo-600: #b8921f;
+  --color-indigo-700: #93741a;
+  --color-indigo-800: #6e5714;
+  --color-indigo-900: #4a3a0e;
+  --color-indigo-950: #2b2106;
+
+  --color-violet-50: #f9f4e4;
+  --color-violet-100: #f1e4bb;
+  --color-violet-200: #e6cf87;
+  --color-violet-300: #dbb455;
+  --color-violet-400: #cf9e33;
+  --color-violet-500: #c3912a;
+  --color-violet-600: #a37720;
+  --color-violet-700: #7f5c18;
+  --color-violet-800: #5c4312;
+  --color-violet-900: #3e2d0c;
+  --color-violet-950: #261b06;
+
+  --color-gold: #d4af37;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: "Cairo", "Tajawal", "Segoe UI", system-ui, sans-serif;
+  background-color: #faf7ef;
+  color: #1d1810;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Fix for mobile horizontal scroll issues */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.font-display {
+  font-family: "Cairo", "Tajawal", system-ui, sans-serif;
+}
+
+/* ── decorative surfaces (black & gold identity) ── */
+.mesh-bg {
+  background:
+    radial-gradient(60rem 30rem at 85% -10%, rgba(212, 175, 55, 0.22), transparent 60%),
+    radial-gradient(50rem 26rem at -10% 10%, rgba(180, 138, 30, 0.14), transparent 60%),
+    radial-gradient(40rem 24rem at 50% 110%, rgba(212, 175, 55, 0.14), transparent 60%),
+    #faf7ef;
+}
+
+.ink-bg {
+  background:
+    radial-gradient(70rem 34rem at 85% -20%, rgba(212, 175, 55, 0.22), transparent 60%),
+    radial-gradient(50rem 30rem at -15% 20%, rgba(230, 199, 102, 0.10), transparent 55%),
+    radial-gradient(46rem 30rem at 55% 125%, rgba(212, 175, 55, 0.12), transparent 60%),
+    #0d0c09;
+}
+
+.glass {
+  background: rgba(255, 253, 247, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* ── components ── */
+.card {
+  @apply rounded-3xl bg-white p-6 ring-1 ring-stone-200/80 shadow-[0_18px_50px_-20px_rgba(29,24,16,0.25)];
+}
+
+.btn,
+.btn-primary,
+.btn-dark,
+.btn-ghost,
+.btn-danger,
+.btn-mint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 1rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 800;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+.btn:disabled,
+.btn-primary:disabled,
+.btn-dark:disabled,
+.btn-ghost:disabled,
+.btn-danger:disabled,
+.btn-mint:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  color: #241a02;
+  background: linear-gradient(to left, #d4af37, #f2d47e);
+  box-shadow: 0 10px 25px -8px rgba(212, 175, 55, 0.65);
+}
+.btn-primary:hover {
+  box-shadow: 0 14px 32px -8px rgba(212, 175, 55, 0.8);
+  transform: translateY(-2px);
+}
+.btn-primary:active { transform: translateY(0); }
+
+.btn-dark { color: #f2d47e; background: #17140c; }
+.btn-dark:hover { background: #26210f; transform: translateY(-2px); }
+
+.btn-ghost { color: #44403c; background: #fff; box-shadow: inset 0 0 0 1px #e7e5e4; }
+.btn-ghost:hover { box-shadow: inset 0 0 0 1px #d6d3d1; background: #fafaf9; }
+
+.btn-danger { color: #e11d48; background: #fff1f2; box-shadow: inset 0 0 0 1px #fecdd3; }
+.btn-danger:hover { background: #ffe4e6; }
+
+.btn-mint { color: #047857; background: #ecfdf5; box-shadow: inset 0 0 0 1px #a7f3d0; }
+.btn-mint:hover { background: #d1fae5; }
+
+.btn-sm {
+  padding: 0.375rem 0.875rem;
+  font-size: 0.75rem;
+  border-radius: 0.75rem;
+}
+
+.input {
+  width: 100%;
+  border-radius: 1rem;
+  border: 0;
+  background: #fff;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: #1c1917;
+  box-shadow: inset 0 0 0 1px #e7e5e4;
+  transition: box-shadow 0.15s ease;
+}
+.input::placeholder { color: #a8a29e; }
+.input:focus { outline: none; box-shadow: inset 0 0 0 2px #d4af37; }
+
+.label {
+  margin-bottom: 0.375rem;
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #78716c;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.table-th {
+  padding: 0.75rem 1rem;
+  text-align: right;
+  font-size: 11px;
+  font-weight: 800;
+  color: #a8a29e;
+  white-space: nowrap;
+}
+
+.table-td {
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: #44403c;
+  white-space: nowrap;
+}
+
+/* progress */
+.pbar {
+  height: 0.5rem;
+  width: 100%;
+  border-radius: 9999px;
+  background: #f5f5f4;
+  overflow: hidden;
+}
+.pbar > span {
+  display: block;
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(to left, #c3912a, #f2d47e);
+  transition: width 0.7s ease;
+}
+
+@keyframes floaty {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-14px); }
+}
+.animate-floaty { animation: floaty 6s ease-in-out infinite; }
+
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.94) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-pop { animation: pop-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.45); }
+  70% { box-shadow: 0 0 0 14px rgba(212, 175, 55, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); }
+}
+.animate-live { animation: pulse-ring 1.6s ease-out infinite; }
+
+/* whiteboard canvas cursor */
+.wb-canvas { touch-action: none; cursor: crosshair; }
+
+/* حقول كتابة الرياضيات — الاتجاه دائماً من اليسار */
+.math-field {
+  unicode-bidi: plaintext !important;
+}
+
+::selection { background: #d4af37; color: #241a02; }
