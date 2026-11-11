@@ -1,66 +1,68 @@
-# Chelbi-Maths42
+# Chelbi-Maths42 — منصة الرياضيات
 
-تطبيق صغير (واجهة API) لتمارين الرياضيات على **Neon Postgres**: يحفظ التمارين والمحاولات ويسترجعها.
+Educational mathematics platform: teachers create groups, quizzes and live sessions;
+students join with a code, answer from a maths keyboard, upload handwritten work; the
+teacher grades live with an audit trail.
 
-A small API for maths practice on **Neon Postgres** — stores exercises and attempts, reads them back.
+Next.js 16 (App Router) · React 19 · TypeScript · Tailwind 4 · Drizzle ORM · PostgreSQL
 
-## الحالة / Status
+> Imported verbatim from `chelbimed40-ctrl/Chelbi-Maths@a8f8f0d` — see `IMPORTED_FROM.md`.
+> Neon integration summary: `NEON_INTEGRATION.md`.
 
-| Item | State |
-| --- | --- |
-| `neon init` (link + `neon.ts` + skills) | ✅ done (offline, unverified) |
-| `neon deploy` (provision + `.env.local`) | ❌ **blocked** — this sandbox cannot reach `console.neon.tech` |
-| Schema + tables | ✅ written and applied (`exercises`, `attempts`) |
-| Save & retrieve through the API | ✅ proven end to end (see below) |
-| `npm run build` | ✅ passes |
+## Run
 
-See [NEON_SETUP.md](./NEON_SETUP.md) for the exact commands and error output.
+```bash
+npm install
+cp .env.example .env.local     # or: neon deploy  (writes .env.local automatically)
+npm run db:migrate             # 14 tables
+npm run db:verify              # connection + schema + CRUD gate (rolled back)
+npm run dev                    # http://localhost:3000
+```
 
-## Endpoints
+Production:
 
-| Method | Path | Purpose |
+```bash
+npm run build && npm start
+```
+
+## Environment
+
+| Variable | Needed | Purpose |
 | --- | --- | --- |
-| GET | `/health` | connection check + row counts |
-| POST | `/exercises` | save an exercise `{prompt, answer, level}` |
-| GET | `/exercises?limit=20` | list exercises (newest first) |
-| GET | `/exercises/:id` | fetch one exercise |
-| POST | `/exercises/:id/attempts` | save + grade an attempt `{answer}` |
-| GET | `/exercises/:id/attempts` | list attempts for an exercise |
+| `DATABASE_URL` | yes | pooled Neon connection string (app runtime) |
+| `DATABASE_URL_UNPOOLED` | for migrations | direct connection (no `-pooler`) |
+| `SESSION_SECRET` | **yes in production** | signs the session cookie |
+| `ADMIN_PASSWORD` | **yes in production** | bootstrap password for the teacher account |
+| `SMTP_*` | optional | password reset emails |
 
-## Setup on Neon (when the API is reachable)
+`DATABASE_URL` is read only in `src/db/index.ts`, which starts with `import "server-only"` —
+importing it from a Client Component is a build error, so the credential can never reach a
+browser bundle. No `NEXT_PUBLIC_*` variable exists in the project.
+
+## Routes
+
+Pages: `/` · `/teacher/*` (login, dashboard, groups, quizzes, sessions, polls, tools, images,
+account) · `/student/*` · `/j/[token]` (group invite) · `/register/[token]` · `/chelbi-mohamed`
+
+API: `/api/health`, `/api/teacher/*`, `/api/student/*`, `/api/groups/*`, `/api/quizzes/*`,
+`/api/sessions/*`, `/api/submissions/*`, `/api/grading`, `/api/polls/*`, `/api/images/*`,
+`/api/question-images/*`, `/api/export/*`, `/api/tools/pick`
+
+## Database
+
+Schema: `src/db/schema.ts` · Migrations: `drizzle/` (versioned, generated with
+`npm run db:generate`) · Apply with `npm run db:migrate`.
+
+Never use `drizzle-kit push` against production — it diffs and drops silently.
+
+## Checks
 
 ```bash
-neon login                      # opens the browser
-neon deploy                     # provisions the branch, writes .env.local:
-                                #   DATABASE_URL           (pooled, app runtime)
-                                #   DATABASE_URL_UNPOOLED  (direct, migrations)
+npm run typecheck
 npm run build
-npm run migrate                 # creates the tables
-npm run verify                  # full write/read round trip, exits 1 on failure
-npm start                       # http://localhost:3000
+npm run db:verify                     # DB only, safe on production (rolls back)
+BASE_URL=http://localhost:3000 node scripts/e2e.mjs       # full API CRUD, needs the app running
+npm run local-pg                      # dev-only: local Postgres-wire server on :55432
 ```
 
-`npm run migrate`, `npm start` and `npm run verify` load `.env.local` (then `.env`)
-automatically via Node's `--env-file-if-exists`, so no shell exports are needed.
-
-## Running without a reachable Neon endpoint
-
-`scripts/local-pg.mjs` starts a local PostgreSQL-wire server (PGlite — real Postgres
-in WASM) so the exact same `pg` code path can be tested offline:
-
-```bash
-npm run local-pg &              # 127.0.0.1:55432
-export DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable"
-export DATABASE_URL_UNPOOLED="$DATABASE_URL"
-npm run migrate && npm run verify && npm start
-```
-
-Dev only — never point production at it.
-
-## Stack notes (per the installed `neon-postgres` agent skill)
-
-- Driver: `pg` (node-postgres) with one shared pool — correct for a long-lived Node server
-  and for Neon Functions. `@neondatabase/serverless` is for serverless/edge runtimes.
-- Pooled `DATABASE_URL` for app traffic; direct `DATABASE_URL_UNPOOLED` for migrations.
-- TLS required for non-loopback hosts.
-- `gen_random_uuid()` comes from Postgres core (13+), so no `pgcrypto` extension is needed.
+`scripts/e2e.mjs` creates its own rows and deletes only the throwaway ones it created.

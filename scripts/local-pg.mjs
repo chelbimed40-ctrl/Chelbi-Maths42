@@ -14,7 +14,13 @@ const port = Number(process.env.LOCAL_PG_PORT ?? 55432);
 const dataDir = process.env.LOCAL_PG_DATA ?? ".pgdata";
 
 const db = await PGlite.create({ dataDir });
-const server = new PGLiteSocketServer({ db, port, host: "127.0.0.1" });
+// PGlite is single-connection; the socket server multiplexes a few clients.
+const server = new PGLiteSocketServer({
+  db,
+  port,
+  host: "127.0.0.1",
+  maxConnections: Number(process.env.LOCAL_PG_MAX_CONNECTIONS ?? 10),
+});
 await server.start();
 console.log(`local pg (pglite) listening on 127.0.0.1:${port} (dataDir=${dataDir})`);
 

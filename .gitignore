@@ -1,12 +1,25 @@
-.neon
-node_modules/
+# build output
+.next/
+out/
 dist/
+build/
+*.tsbuildinfo
+next-env.d.ts
 
-# Neon env files written by `neon deploy` / `neon env pull` — never commit secrets
+# deps
+node_modules/
+
+# env / secrets — never commit
 .env
 .env.local
 .env.*.local
 !.env.example
+.neon
 
 # local scratch database used by `npm run local-pg`
 .pgdata/
+.pgdata-app/
+
+# misc
+.DS_Store
+*.log

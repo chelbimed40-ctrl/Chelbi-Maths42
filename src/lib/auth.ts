@@ -6,7 +6,14 @@ const COOKIE_NAME = "sim_session";
 const MAX_AGE = 60 * 60 * 24 * 14; // 14 days
 
 function secret() {
-  return process.env.SESSION_SECRET || "dev-secret-change-in-production";
+  const configured = process.env.SESSION_SECRET;
+  if (configured && configured.length >= 16) return configured;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "SESSION_SECRET must be set in production (generate one with: openssl rand -base64 48)",
+    );
+  }
+  return "dev-secret-change-in-production";
 }
 
 export type Role = "teacher" | "student";

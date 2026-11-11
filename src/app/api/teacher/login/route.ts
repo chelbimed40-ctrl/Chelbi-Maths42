@@ -16,7 +16,14 @@ export async function POST(req: NextRequest) {
     if (username !== "ChelbiMohamed-42") {
       return NextResponse.json({ error: "الحساب الرئيسي لم يُنشأ بعد — استخدم ChelbiMohamed-42" }, { status: 400 });
     }
-    const expected = process.env.ADMIN_PASSWORD || "Maths@1984";
+    const configured = process.env.ADMIN_PASSWORD;
+    if (!configured && process.env.NODE_ENV === "production") {
+      return NextResponse.json(
+        { error: "لم تُضبط كلمة مرور الحساب الرئيسي (ADMIN_PASSWORD) — راجع إعداد النظام" },
+        { status: 500 },
+      );
+    }
+    const expected = configured || "Maths@1984";
     if (password !== expected) {
       return NextResponse.json({ error: "كلمة المرور الافتراضية غير صحيحة — راجع إعداد النظام" }, { status: 401 });
     }
